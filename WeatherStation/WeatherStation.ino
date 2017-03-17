@@ -4,7 +4,7 @@
 // -------------
 // Temp/Humid Sensor: AM2302
 // Rain Sensor WS 1600 - TX26
-// Wind Sensor WS 1600 - TX23
+// Wind Sensor WS 1600 - TX23 (Infos: http://www.rd-1000.com/chpm78/lacrosse/Lacrosse_TX23_protocol.html)
 // ----------------------------
 
 
@@ -93,32 +93,29 @@ void WindSensor() {
 	GoodData = HIGH;
 	pinMode(WINDPIN,OUTPUT);
 	digitalWrite(WINDPIN, LOW);
-	delay(250);
+	delay(500); 						//pull line down to inicialize sensor
 	pinMode(WINDPIN, INPUT);
-		
-	stat = digitalRead(WINDPIN);	// get the sensor input
-	while(stat == HIGH && GoodCounterCheck <= 10) {			// wait for falling edge (trigger for data sending)
-		stat = digitalRead(WINDPIN);
-		GoodCounterCheck = GoodCounterCheck +1;
-	}
-	if (GoodCounterCheck < 10) {
-		GoodCounterCheck = 0;
-		while(stat == HIGH && GoodCounterCheck <= 10) {			// wait for falling edge (trigger for data sending)
-			stat = digitalRead(WINDPIN);
-			GoodCounterCheck = GoodCounterCheck +1;
-		}
-		if (GoodCounterCheck < 10) {
-			GoodCounterCheck = 0;
-			while(stat == LOW && GoodCounterCheck <= 10) {			// wait for start frame
-			stat = digitalRead(WINDPIN);
-			GoodCounterCheck = GoodCounterCheck +1;
+	
+	for (int i; i <=10; i++) {
+		stat = digitalRead(WINDPIN);					//get the sensor input
+		if (stat == HIGH) {						//wait for sensor answer Bit
+			for(int j; j <= 10; j++) {
+				stat = digitalRead(WINDPIN);			//get the sensor input
+				if (stat == LOW) {				//wait for till Startframe
+					stat = digitalRead(WINDPIN);	
+					for (int k; k <=500; k++) {
+						stat = digitalRead(WINDPIN);
+						if (stat == HIGH) {		//get raising edge to position in the middle of bits
+							break;
+						}
+						GoodData = LOW;
+					}
+					break;
+				}
+				GoodData = LOW;
 			}
+			break;	
 		}
-		else {
-			GoodData = LOW;
-		}
-	}
-	else {
 		GoodData = LOW;
 	}
 
